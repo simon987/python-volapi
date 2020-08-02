@@ -3,7 +3,6 @@ import warnings
 
 from functools import partial
 
-
 from .file import File
 from .chat import ChatMessage
 from .auxo import ARBITRATOR
@@ -29,7 +28,7 @@ class Handler:
         self.__callbacks = {}
         self.__cid = 0
         for g in GENERICS:
-            setattr(self, f"{self.__head}{g}", partial(self._handle_generic, g))
+            setattr(self, self.__head + g, partial(self._handle_generic, g))
 
     def add_data(self, rawdata):
         """Add data to given room's state"""
@@ -41,7 +40,7 @@ class Handler:
                     # Flush messages but we got nothing to flush
                     continue
                 if item[0] != 0:
-                    warnings.warn(f"Unknown message type '{item[0]}'", Warning)
+                    warnings.warn("Unknown message type " + item[0], Warning)
                     continue
                 item = item[1]
                 # convert target to string because error codes are ints
@@ -51,7 +50,7 @@ class Handler:
                 except IndexError:
                     data = {}
                 try:
-                    method = getattr(self, f"{self.__head}{target}")
+                    method = getattr(self, self.__head + target)
                     method(data)
                 except AttributeError:
                     self._handle_unhandled(target, data)
@@ -78,7 +77,8 @@ class Handler:
     def _handle_unhandled(target, data):
         """Handle life, the universe and the rest"""
 
-        warnings.warn(f"unknown data type '{target}' with data '{data}'", Warning)
+        pass
+        # warnings.warn("unknown data type '{target}' with data '{data}'", Warning)
 
     def _handle_401(self, data):
         """Handle Lain being helpful"""
@@ -129,7 +129,6 @@ class Handler:
                 self.conn.enqueue_data(k, self.room.user.nick)
             elif k != "profile":
                 if not hasattr(self.room, k):
-                    warnings.warn(f"Skipping unset property {k}", ResourceWarning)
                     continue
                 setattr(self.room, k, v)
                 self.conn.enqueue_data(k, getattr(self.room, k))

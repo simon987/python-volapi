@@ -61,7 +61,7 @@ class Connection(requests.Session):
 
         self.__lastping = self.__lastpong = 0
 
-        agent = f"Volafile-API/{__version__}"
+        agent = "Volafile-API/" + __version__
 
         self.headers.update({"User-Agent": agent})
         self.cookies.update({"allow-download": "1"})
@@ -82,13 +82,13 @@ class Connection(requests.Session):
         """Connect to websocket through asyncio http interface"""
 
         ws_url = (
-            f"{BASE_WS_URL}?room={self.room.room_id}&cs={checksum}&nick={username}"
-            f"&rn={random_id(6)}&t={int(time.time() * 1000)}&transport=websocket&EIO=3"
+            "%s?room=%s&cs=%s&nick=%s&rn=%s&t=%d&transport=websocket&EIO=3" %
+            (BASE_WS_URL, self.room.room_id, checksum, username, random_id(6), int(time.time() * 1000))
         )
         if password:
-            ws_url += f"&password={password}"
+            ws_url += "&password=" + password
         elif key:
-            ws_url += f"&key={key}"
+            ws_url += "&key=" + key
 
         ARBITRATOR.create_connection(
             self.proto, ws_url, self.headers["User-Agent"], self.cookies
@@ -149,13 +149,13 @@ class Connection(requests.Session):
         """Make a REST API call"""
 
         heads = heads or {}
-        server = f"https://{server}{REST}" if server else BASE_REST_URL
+        server = ("https://" + server + REST) if server else BASE_REST_URL
         if not isinstance(params, dict) or not isinstance(heads, dict):
             raise ValueError("params argument must be a dictionary")
         headers = {"Origin": BASE_URL, "Referer": self.room.url}
         headers.update(heads)
         kw = dict(params=params, headers=headers)
-        return from_json(self.get(f"{server}{call}", **kw).text)
+        return from_json(self.get(server + call, **kw).text)
 
     def reraise(self, ex):
         """Reraise an exception passed by the event thread"""
@@ -286,7 +286,7 @@ class Connection(requests.Session):
             if self.exception:
                 # pylint: disable=raising-bad-type
                 raise self.exception
-            raise ConnectionError(f"{self.room} is not connected")
+            raise ConnectionError(self.room + " is not connected")
 
         thread = get_thread_ident()
         with self.lock:
@@ -382,7 +382,7 @@ class Room:
         user is your user name, if none then generates one for you"""
 
         self.name = name
-        self.url = f"{BASE_URL}/r/{self.name}"
+        self.url = "%s/r/%s" % (BASE_URL, self.name)
         self.password = password or ""
         self.key = key or ""
         self.admin = self.staff = self.owner = self.janitor = False
@@ -434,7 +434,7 @@ class Room:
         def setter(self, val):
             if admin and not self.admin:
                 raise RuntimeError(
-                    f"You can't set the {key} key without mod privileges"
+                    "You can't set the {key} key without mod privileges"
                 )
             self.__set_config_value(self.config.get_real_key(key), val)
 
@@ -447,7 +447,7 @@ class Room:
         params = {"room": self.room_id, "config": to_json({key: value})}
         resp = self.conn.make_api_call("setRoomConfig", params)
         if "error" in resp:
-            raise RuntimeError(f"{resp['error'].get('message') or resp['error']}")
+            raise RuntimeError("{resp['error'].get('message') or resp['error']}")
         return resp
 
     def __get_config(self):
@@ -469,8 +469,7 @@ class Room:
         config = self.conn.make_api_call("getRoomConfig", params)
         if "error" in config:
             raise RuntimeError(
-                f"Failed to get room config for {self.name}\n"
-                f"{config['error'].get('message') or config['error']}"
+                "Failed to get room config for {self.name}\n{config['error'].get('message') or config['error']}"
             )
         self.config.update(config)
         self.__add_prop("private")
@@ -482,7 +481,7 @@ class Room:
         return (self.config.room_id, self.config.owner, config["checksum2"])
 
     def __repr__(self):
-        return f"<Room({self.name}, {self.user.nick}, connected={self.connected})>"
+        return "<Room(%s, %s, connected=%s)>" % (self.name, self.user.nick, self.conn)
 
     def __enter__(self):
         return self
@@ -589,7 +588,7 @@ class Room:
 
         if len(msg) > self.config.max_message:
             raise ValueError(
-                f"Chat message must be at most {self.config.max_message} characters."
+                "Chat message must be at most {self.config.max_message} characters."
             )
         while not self.user.nick:
             with ARBITRATOR.condition:
@@ -626,7 +625,7 @@ class Room:
                 file.seek(0, 2)
                 if file.tell() > self.config.max_file:
                     raise ValueError(
-                        f"File must be at most {self.config.max_file >> 30} GB"
+                        "File must be at most {self.config.max_file >> 30} GB"
                     )
             finally:
                 try:
@@ -675,7 +674,7 @@ class Room:
             while True:
                 try:
                     post = self.conn.post(
-                        f"https://{server}/upload",
+                        "https://%s/upload" % server,
                         params=params,
                         data=files,
                         headers=headers,
@@ -778,7 +777,7 @@ class Room:
             info = self.conn.make_call_with_cb("getFileinfo", fid).result(5)
             if not info:
                 warnings.warn(
-                    f"Your query for file with ID: '{fid}' failed.", RuntimeWarning
+                    "Your query for file with ID: '{fid}' failed.", RuntimeWarning
                 )
             elif has_fid:
                 self.__files[fid].fileupdate(info)
@@ -813,7 +812,7 @@ class Room:
             except Exception:
                 to = int(info.get("error", {}).get("info", {}).get("timeout", 0))
                 if to <= 0 or not allow_timeout:
-                    raise IOError(f"Failed to retrieve key {info}")
+                    raise IOError("Failed to retrieve key {info}")
                 time.sleep(to / 10000)
 
     def delete_files(self, ids):

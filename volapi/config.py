@@ -29,7 +29,7 @@ class Config(dict):
 
     def __getattr__(self, key):
         if key not in self.__cfg_mapping:
-            raise KeyError(f"Mapping for the key `{key}` doesn't exist")
+            raise KeyError("Mapping for the key %s doesn't exist" % key)
         return self[key]
 
     def update(self, config):

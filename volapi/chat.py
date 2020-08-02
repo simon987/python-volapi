@@ -95,20 +95,16 @@ class ChatMessage(str):
                 fileobj = room.filedict.get(fileid)
                 if fileobj:
                     files += (fileobj,)
-                fileid = f"@{fileid}"
+                fileid = "@" + fileid
                 msg += fileid
             elif ptype == "room":
                 roomid = part["id"]
                 rooms[roomid] = part["name"]
-                msg += f"#{roomid}"
+                msg += "#" + roomid
             elif ptype == "url":
                 msg += part["text"]
             elif ptype == "raw":
                 msg += html_to_text(part["value"])
-            else:
-                import warnings
-
-                warnings.warn(f"unknown message type '{ptype}'", Warning)
 
         nick = data.get("nick") or data.get("user")
         options = data.get("options", {})
@@ -213,4 +209,4 @@ class ChatMessage(str):
             prefix += "+"
         if self.system:
             prefix += "%"
-        return f"<Msg({prefix}{self.nick}, {self})>"
+        return "<Msg(%s%s, %s)>" % (prefix, self.nick, self)

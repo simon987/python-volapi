@@ -26,7 +26,7 @@ class File:
             "info",
             "thumb",
         ):
-            raise AttributeError(f"Not a valid key: {name}")
+            raise AttributeError("Not a valid key: %s" % name)
         try:
             return self.__additional[name]
         except KeyError:
@@ -63,7 +63,7 @@ class File:
     def url(self):
         """Gets the download url of the file"""
 
-        return f"{BASE_URL}/get/{self.fid}/{self.name}"
+        return "%s/get/%s/%s" % (BASE_URL, self.fid, self.name)
 
     @property
     def expired(self):
@@ -159,4 +159,6 @@ class File:
         self.conn.make_call("timeoutFile", self.fid, duration)
 
     def __repr__(self):
-        return f"<File({self.fid}, {self.size}, {self.uploader}, {self.name})>"
+        return f"<File(%s, %s, %s, %s)>" % (
+            self.fid, self.size, self.uploader, self.name
+        )

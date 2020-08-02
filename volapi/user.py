@@ -25,7 +25,7 @@ class User:
         resp = self.conn.make_api_call("login", params)
         if "error" in resp:
             raise RuntimeError(
-                f"Login failed: {resp['error'].get('message') or resp['error']}"
+                "Login failed"
             )
         self.session = resp["session"]
         self.conn.make_call("useSession", self.session)
@@ -56,8 +56,7 @@ class User:
             resp = self.conn.make_api_call("logout", params)
             if not resp.get("success", False):
                 raise RuntimeError(
-                    f"Logout unsuccessful: "
-                    f"{resp['error'].get('message') or resp['error']}"
+                    "Logout unsuccessful: "
                 )
             self.conn.make_call("logout", params)
             self.conn.cookies.pop("session")
@@ -84,7 +83,7 @@ class User:
         resp = self.conn.make_api_call("register", params)
 
         if "error" in resp:
-            raise RuntimeError(f"{resp['error'].get('message') or resp['error']}")
+            raise RuntimeError(resp['error'])
 
         self.conn.make_call("useSession", resp["session"])
         self.conn.cookies.update({"session": resp["session"]})
@@ -95,10 +94,10 @@ class User:
 
         if len(username) > self.__max_length or len(username) < 3:
             raise ValueError(
-                f"Username must be between 3 and {self.__max_length} characters."
+                "Username must be between 3 and {self.__max_length} characters."
             )
         if any(c not in string.ascii_letters + string.digits for c in username):
             raise ValueError("Usernames can only contain alphanumeric characters.")
 
     def __repr__(self):
-        return f"<User({self.nick}, {self.logged_in})>"
+        return "<User(%s, %s)>" % (self.nick, self.logged_in)
