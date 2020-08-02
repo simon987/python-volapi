@@ -1,3 +1,2 @@
 autobahn==19.3.3
 requests
-orjson
